@@ -1,0 +1,100 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.9.6, pytest-8.4.0, pluggy-1.6.0 -- /Users/craigwebster/metacalculation-service/venv/bin/python3
+cachedir: .pytest_cache
+rootdir: /Users/craigwebster/metacalculation-service
+configfile: pytest.ini
+testpaths: tests
+plugins: anyio-4.9.0, asyncio-1.0.0
+asyncio: mode=strict, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 16 items
+
+tests/test_biological_variation.py::test_compare_all_with_biologicalvariation[1] PASSED [  6%]
+tests/test_biological_variation.py::test_compare_all_with_biologicalvariation[2] PASSED [ 12%]
+tests/test_biological_variation.py::test_compare_all_with_biologicalvariation[3] PASSED [ 18%]
+tests/test_biological_variation.py::test_compare_all_with_biologicalvariation[4] PASSED [ 25%]
+tests/test_biological_variation.py::test_compare_all_with_biologicalvariation[5] PASSED [ 31%]
+tests/test_biological_variation.py::test_compare_all_with_biologicalvariation[6] PASSED [ 37%]
+tests/test_biological_variation.py::test_compare_all_with_biologicalvariation[7] PASSED [ 43%]
+tests/test_biological_variation.py::test_compare_all_with_biologicalvariation[8] PASSED [ 50%]
+tests/test_biological_variation.py::test_compare_all_with_biologicalvariation[9] PASSED [ 56%]
+tests/test_biological_variation.py::test_compare_all_with_biologicalvariation[10] PASSED [ 62%]
+tests/test_biological_variation.py::test_compare_all_with_biologicalvariation[11] FAILED [ 68%]
+tests/test_biological_variation.py::test_compare_all_with_biologicalvariation[12] PASSED [ 75%]
+tests/test_biological_variation.py::test_compare_all_with_biologicalvariation[13] FAILED [ 81%]
+tests/test_biological_variation.py::test_compare_all_with_biologicalvariation[14] PASSED [ 87%]
+tests/test_biological_variation.py::test_compare_all_with_biologicalvariation[15] PASSED [ 93%]
+tests/test_hello.py::test_hello PASSED                                   [100%]
+
+=================================== FAILURES ===================================
+________________ test_compare_all_with_biologicalvariation[11] _________________
+
+n = 11
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("n", range(1, 16))
+    async def test_compare_all_with_biologicalvariation(n):
+        CSV_DATA = make_csv(n)
+        headers = {"Content-Type": "text/plain"}
+        async with httpx.AsyncClient() as client:
+            local_resp = await client.post(LOCAL_API_URL, content=CSV_DATA, headers=headers)
+            assert local_resp.status_code == 200
+            local_json = local_resp.json()
+    
+            biovar_resp = await client.post(BIOVAR_API_URL, content=CSV_DATA, headers=headers)
+            assert biovar_resp.status_code == 200
+            biovar_json = biovar_resp.json()
+    
+        for key in ["W.Median", "Range_lower", "Range_upper"]:
+            local_val = extract_scalar(local_json.get(key))
+            biovar_val = extract_scalar(biovar_json.get(key))
+            if local_val is None or biovar_val is None:
+                assert local_val == biovar_val, f"{key}: {local_val} != {biovar_val} (n={n})"
+            else:
+>               assert math.isclose(local_val, biovar_val, rel_tol=1e-2, abs_tol=0.02), f"{key}: {local_val} != {biovar_val} (n={n})"
+E               AssertionError: Range_upper: 21.950747491416227 != 22.8374 (n=11)
+E               assert False
+E                +  where False = <built-in function isclose>(21.950747491416227, 22.8374, rel_tol=0.01, abs_tol=0.02)
+E                +    where <built-in function isclose> = math.isclose
+
+tests/test_biological_variation.py:42: AssertionError
+------------------------------ Captured log call -------------------------------
+INFO     httpx:_client.py:1740 HTTP Request: POST http://localhost:8081/metacalculation "HTTP/1.1 200 OK"
+INFO     httpx:_client.py:1740 HTTP Request: POST https://r.biologicalvariation.eu/metacalculation "HTTP/1.1 200 OK"
+________________ test_compare_all_with_biologicalvariation[13] _________________
+
+n = 13
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("n", range(1, 16))
+    async def test_compare_all_with_biologicalvariation(n):
+        CSV_DATA = make_csv(n)
+        headers = {"Content-Type": "text/plain"}
+        async with httpx.AsyncClient() as client:
+            local_resp = await client.post(LOCAL_API_URL, content=CSV_DATA, headers=headers)
+            assert local_resp.status_code == 200
+            local_json = local_resp.json()
+    
+            biovar_resp = await client.post(BIOVAR_API_URL, content=CSV_DATA, headers=headers)
+            assert biovar_resp.status_code == 200
+            biovar_json = biovar_resp.json()
+    
+        for key in ["W.Median", "Range_lower", "Range_upper"]:
+            local_val = extract_scalar(local_json.get(key))
+            biovar_val = extract_scalar(biovar_json.get(key))
+            if local_val is None or biovar_val is None:
+                assert local_val == biovar_val, f"{key}: {local_val} != {biovar_val} (n={n})"
+            else:
+>               assert math.isclose(local_val, biovar_val, rel_tol=1e-2, abs_tol=0.02), f"{key}: {local_val} != {biovar_val} (n={n})"
+E               AssertionError: Range_upper: 20.324040985701387 != 21.3231 (n=13)
+E               assert False
+E                +  where False = <built-in function isclose>(20.324040985701387, 21.3231, rel_tol=0.01, abs_tol=0.02)
+E                +    where <built-in function isclose> = math.isclose
+
+tests/test_biological_variation.py:42: AssertionError
+------------------------------ Captured log call -------------------------------
+INFO     httpx:_client.py:1740 HTTP Request: POST http://localhost:8081/metacalculation "HTTP/1.1 200 OK"
+INFO     httpx:_client.py:1740 HTTP Request: POST https://r.biologicalvariation.eu/metacalculation "HTTP/1.1 200 OK"
+=========================== short test summary info ============================
+FAILED tests/test_biological_variation.py::test_compare_all_with_biologicalvariation[11]
+FAILED tests/test_biological_variation.py::test_compare_all_with_biologicalvariation[13]
+========================= 2 failed, 14 passed in 6.35s =========================
