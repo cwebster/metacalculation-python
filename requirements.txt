@@ -2,3 +2,6 @@ fastapi
 uvicorn[standard]
 pandas
 numpy
+pytest
+httpx
+pytest-asyncio  
