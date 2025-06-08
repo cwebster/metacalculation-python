@@ -20,7 +20,7 @@ def extract_scalar(val):
     return val
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("n", range(1, 16))
+@pytest.mark.parametrize("n", range(1, 31))  # Test from 1 to 30 records
 async def test_compare_all_with_biologicalvariation(n):
     CSV_DATA = make_csv(n)
     headers = {"Content-Type": "text/plain"}

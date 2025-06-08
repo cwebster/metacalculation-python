@@ -103,13 +103,13 @@ def trunc_testdata(csv_text: str) -> pd.DataFrame:
 
     return trunc
 
-def calc_median_uncertainty(df: pd.DataFrame) -> UncertaintyResult:
+def calc_median_uncertainty(df: pd.DataFrame, seed: int = None) -> UncertaintyResult:
     """
     Replicates calc_median_uncertainty from R:
     - if n == 0: returns N=0 with nulls
     - if n == 1: returns that single CV & CI
     - if n <= BOOT_LIMIT: weighted median + min/max
-    - else: bootstrap percentile CI (R type='perc')
+    - else: bootstrap percentile CI (R type='perc', quantile type=7)
     """
     n = len(df)
     if n == 0:
@@ -139,15 +139,24 @@ def calc_median_uncertainty(df: pd.DataFrame) -> UncertaintyResult:
             }
         )
 
-    # bootstrap
+    # --- Bootstrapping (index-based, R-style) ---
+    rng = np.random.default_rng(seed)
     boot_meds = []
     for _ in range(BOOT_N):
-        sample = df.sample(n=n, replace=True)
-        boot_meds.append(
-            weighted_median(sample["CV"].values, sample["tot_weight"].values)
-        )
-    lower = float(np.percentile(boot_meds, 2.5))
-    upper = float(np.percentile(boot_meds, 97.5))
+        idxs = rng.integers(0, n, n)
+        sample_cv = df["CV"].values[idxs]
+        sample_weights = df["tot_weight"].values[idxs]
+        boot_meds.append(weighted_median(sample_cv, sample_weights))
+
+    # Match R's quantile type=7 as closely as possible
+    np_version = tuple(map(int, np.__version__.split('.')[:2]))
+    if np_version >= (1, 22):
+        lower = float(np.percentile(boot_meds, 2.5, method="linear"))
+        upper = float(np.percentile(boot_meds, 97.5, method="linear"))
+    else:
+        lower = float(np.percentile(boot_meds, 2.5, interpolation="linear"))
+        upper = float(np.percentile(boot_meds, 97.5, interpolation="linear"))
+
     return UncertaintyResult(
         N=n, **{"W.Median": est, "Range_lower": lower, "Range_upper": upper}
     )
