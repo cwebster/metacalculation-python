@@ -6,18 +6,23 @@ configfile: pytest.ini
 testpaths: tests
 plugins: anyio-4.9.0, asyncio-1.0.0
 asyncio: mode=strict, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
-collecting ... collected 4 items
+collecting ... collected 5 items
 
 tests/test_biological_variation.py::test_compare_many_random_datasets_with_summary 
-Randomized test summary: 17 passed, 3 failed.
+Randomized test summary: 15 passed, 5 failed.
 Failures:
-#6 Range_lower: 17.00043848807498 != 17.2825 (n=11)
-#12 Range_lower: 14.68105149722933 != 14.4128 (n=14)
-#13 Range_upper: 21.8841339178937 != 22.13 (n=18)
+#8 Range_upper: 24.876682191086186 != 24.6 (n=18)
+#12 Range_lower: 14.105824948387516 != 14.6038 (n=14)
+#14 Range_lower: 15.509777531186046 != 15.71 (n=13)
+#16 Range_upper: 18.101596302493963 != 18.4 (n=18)
+#18 Range_lower: 15.03 != 14.7778 (n=14)
 FAILED
 tests/test_hello.py::test_hello PASSED
+tests/test_metacalculation_dual_format.py::test_metacalculation_json_and_csv_equivalence JSON status: 200
+JSON response: {'N': 2, 'W.Median': 19.41925292372142, 'Range_lower': 18.8, 'Range_upper': 20.1}
+PASSED
 tests/test_metacalculation_valid_csv.py::test_metacalculation_valid_csv PASSED
-tests/test_metacalculation_valid_csv.py::test_metacalculation_invalid_csv Error in /metacalculation: 'Include'
+tests/test_metacalculation_valid_csv.py::test_metacalculation_invalid_csv Error in /metacalculation: 400: 'Include' column missing
 PASSED
 
 =================================== FAILURES ===================================
@@ -62,8 +67,8 @@ ________________ test_compare_many_random_datasets_with_summary ________________
             for fail in failures:
                 print(fail)
 >       assert not failures, f"{len(failures)} failures out of {total} tests."
-E       AssertionError: 3 failures out of 20 tests.
-E       assert not ['#6 Range_lower: 17.00043848807498 != 17.2825 (n=11)', '#12 Range_lower: 14.68105149722933 != 14.4128 (n=14)', '#13 Range_upper: 21.8841339178937 != 22.13 (n=18)']
+E       AssertionError: 5 failures out of 20 tests.
+E       assert not ['#8 Range_upper: 24.876682191086186 != 24.6 (n=18)', '#12 Range_lower: 14.105824948387516 != 14.6038 (n=14)', '#14 Range_lower: 15.509777531186046 != 15.71 (n=13)', '#16 Range_upper: 18.101596302493963 != 18.4 (n=18)', '#18 Range_lower: 15.03 != 14.7778 (n=14)']
 
 tests/test_biological_variation.py:60: AssertionError
 ------------------------------ Captured log call -------------------------------
@@ -108,12 +113,14 @@ INFO     httpx:_client.py:1740 HTTP Request: POST https://r.biologicalvariation.
 INFO     httpx:_client.py:1740 HTTP Request: POST http://localhost:8081/metacalculation "HTTP/1.1 200 OK"
 INFO     httpx:_client.py:1740 HTTP Request: POST https://r.biologicalvariation.eu/metacalculation "HTTP/1.1 200 OK"
 =============================== warnings summary ===============================
+tests/test_metacalculation_dual_format.py::test_metacalculation_json_and_csv_equivalence
+tests/test_metacalculation_dual_format.py::test_metacalculation_json_and_csv_equivalence
 tests/test_metacalculation_valid_csv.py::test_metacalculation_valid_csv
-  /Users/craigwebster/metacalculation-service/app/core.py:91: FutureWarning: DataFrameGroupBy.apply operated on the grouping columns. This behavior is deprecated, and in a future version of pandas the grouping columns will be excluded from the operation. Either pass `include_groups=False` to exclude the groupings or explicitly select the grouping columns after groupby to silence this warning.
+  /Users/craigwebster/metacalculation-service/app/core.py:96: FutureWarning: DataFrameGroupBy.apply operated on the grouping columns. This behavior is deprecated, and in a future version of pandas the grouping columns will be excluded from the operation. Either pass `include_groups=False` to exclude the groupings or explicitly select the grouping columns after groupby to silence this warning.
     trunc = grouped.apply(agg_fn).reset_index()
 
 -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
 =========================== short test summary info ============================
-FAILED tests/test_biological_variation.py::test_compare_many_random_datasets_with_summary - AssertionError: 3 failures out of 20 tests.
-assert not ['#6 Range_lower: 17.00043848807498 != 17.2825 (n=11)', '#12 Range_lower: 14.68105149722933 != 14.4128 (n=14)', '#13 Range_upper: 21.8841339178937 != 22.13 (n=18)']
-==================== 1 failed, 3 passed, 1 warning in 8.46s ====================
+FAILED tests/test_biological_variation.py::test_compare_many_random_datasets_with_summary - AssertionError: 5 failures out of 20 tests.
+assert not ['#8 Range_upper: 24.876682191086186 != 24.6 (n=18)', '#12 Range_lower: 14.105824948387516 != 14.6038 (n=14)', '#14 Range_lower: 15.509777531186046 != 15.71 (n=13)', '#16 Range_upper: 18.101596302493963 != 18.4 (n=18)', '#18 Range_lower: 15.03 != 14.7778 (n=14)']
+=================== 1 failed, 4 passed, 3 warnings in 8.35s ====================
