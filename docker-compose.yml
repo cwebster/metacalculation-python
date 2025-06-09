@@ -1,0 +1,8 @@
+version: "3.9"
+
+services:
+  metacalculation:
+    image: cwebster/eflm:bv_python_api
+    ports:
+      - "8082:8080"
+    restart: unless-stopped
