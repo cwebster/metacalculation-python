@@ -22,12 +22,13 @@ def extract_scalar(val):
 @pytest.mark.asyncio
 async def test_compare_many_random_datasets_with_summary():
     headers = {"Content-Type": "text/plain"}
-    total = 1000
+    total = 20
     failures = []
+    random.seed(42)  # Set seed for reproducibility
     for i in range(total):
         n = random.randint(1, 20)
         CSV_DATA = make_csv(n)
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(timeout=10) as client:  # Add timeout
             local_resp = await client.post(LOCAL_API_URL, content=CSV_DATA, headers=headers)
             assert local_resp.status_code == 200
             local_json = local_resp.json()

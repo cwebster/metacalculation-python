@@ -6,320 +6,114 @@ configfile: pytest.ini
 testpaths: tests
 plugins: anyio-4.9.0, asyncio-1.0.0
 asyncio: mode=strict, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
-collecting ... collected 31 items
+collecting ... collected 4 items
 
-tests/test_biological_variation.py::test_compare_all_with_biologicalvariation[1] PASSED [  3%]
-tests/test_biological_variation.py::test_compare_all_with_biologicalvariation[2] PASSED [  6%]
-tests/test_biological_variation.py::test_compare_all_with_biologicalvariation[3] PASSED [  9%]
-tests/test_biological_variation.py::test_compare_all_with_biologicalvariation[4] PASSED [ 12%]
-tests/test_biological_variation.py::test_compare_all_with_biologicalvariation[5] PASSED [ 16%]
-tests/test_biological_variation.py::test_compare_all_with_biologicalvariation[6] PASSED [ 19%]
-tests/test_biological_variation.py::test_compare_all_with_biologicalvariation[7] PASSED [ 22%]
-tests/test_biological_variation.py::test_compare_all_with_biologicalvariation[8] PASSED [ 25%]
-tests/test_biological_variation.py::test_compare_all_with_biologicalvariation[9] PASSED [ 29%]
-tests/test_biological_variation.py::test_compare_all_with_biologicalvariation[10] PASSED [ 32%]
-tests/test_biological_variation.py::test_compare_all_with_biologicalvariation[11] PASSED [ 35%]
-tests/test_biological_variation.py::test_compare_all_with_biologicalvariation[12] FAILED [ 38%]
-tests/test_biological_variation.py::test_compare_all_with_biologicalvariation[13] FAILED [ 41%]
-tests/test_biological_variation.py::test_compare_all_with_biologicalvariation[14] PASSED [ 45%]
-tests/test_biological_variation.py::test_compare_all_with_biologicalvariation[15] FAILED [ 48%]
-tests/test_biological_variation.py::test_compare_all_with_biologicalvariation[16] PASSED [ 51%]
-tests/test_biological_variation.py::test_compare_all_with_biologicalvariation[17] PASSED [ 54%]
-tests/test_biological_variation.py::test_compare_all_with_biologicalvariation[18] PASSED [ 58%]
-tests/test_biological_variation.py::test_compare_all_with_biologicalvariation[19] PASSED [ 61%]
-tests/test_biological_variation.py::test_compare_all_with_biologicalvariation[20] FAILED [ 64%]
-tests/test_biological_variation.py::test_compare_all_with_biologicalvariation[21] PASSED [ 67%]
-tests/test_biological_variation.py::test_compare_all_with_biologicalvariation[22] FAILED [ 70%]
-tests/test_biological_variation.py::test_compare_all_with_biologicalvariation[23] FAILED [ 74%]
-tests/test_biological_variation.py::test_compare_all_with_biologicalvariation[24] PASSED [ 77%]
-tests/test_biological_variation.py::test_compare_all_with_biologicalvariation[25] PASSED [ 80%]
-tests/test_biological_variation.py::test_compare_all_with_biologicalvariation[26] PASSED [ 83%]
-tests/test_biological_variation.py::test_compare_all_with_biologicalvariation[27] PASSED [ 87%]
-tests/test_biological_variation.py::test_compare_all_with_biologicalvariation[28] PASSED [ 90%]
-tests/test_biological_variation.py::test_compare_all_with_biologicalvariation[29] FAILED [ 93%]
-tests/test_biological_variation.py::test_compare_all_with_biologicalvariation[30] FAILED [ 96%]
-tests/test_hello.py::test_hello PASSED                                   [100%]
+tests/test_biological_variation.py::test_compare_many_random_datasets_with_summary 
+Randomized test summary: 17 passed, 3 failed.
+Failures:
+#6 Range_lower: 17.00043848807498 != 17.2825 (n=11)
+#12 Range_lower: 14.68105149722933 != 14.4128 (n=14)
+#13 Range_upper: 21.8841339178937 != 22.13 (n=18)
+FAILED
+tests/test_hello.py::test_hello PASSED
+tests/test_metacalculation_valid_csv.py::test_metacalculation_valid_csv PASSED
+tests/test_metacalculation_valid_csv.py::test_metacalculation_invalid_csv Error in /metacalculation: 'Include'
+PASSED
 
 =================================== FAILURES ===================================
-________________ test_compare_all_with_biologicalvariation[12] _________________
-
-n = 12
+________________ test_compare_many_random_datasets_with_summary ________________
 
     @pytest.mark.asyncio
-    @pytest.mark.parametrize("n", range(1, 31))  # Test from 1 to 30 records
-    async def test_compare_all_with_biologicalvariation(n):
-        CSV_DATA = make_csv(n)
+    async def test_compare_many_random_datasets_with_summary():
         headers = {"Content-Type": "text/plain"}
-        async with httpx.AsyncClient() as client:
-            local_resp = await client.post(LOCAL_API_URL, content=CSV_DATA, headers=headers)
-            assert local_resp.status_code == 200
-            local_json = local_resp.json()
+        total = 20
+        failures = []
+        random.seed(42)  # Set seed for reproducibility
+        for i in range(total):
+            n = random.randint(1, 20)
+            CSV_DATA = make_csv(n)
+            async with httpx.AsyncClient(timeout=10) as client:  # Add timeout
+                local_resp = await client.post(LOCAL_API_URL, content=CSV_DATA, headers=headers)
+                assert local_resp.status_code == 200
+                local_json = local_resp.json()
     
-            biovar_resp = await client.post(BIOVAR_API_URL, content=CSV_DATA, headers=headers)
-            assert biovar_resp.status_code == 200
-            biovar_json = biovar_resp.json()
+                biovar_resp = await client.post(BIOVAR_API_URL, content=CSV_DATA, headers=headers)
+                assert biovar_resp.status_code == 200
+                biovar_json = biovar_resp.json()
     
-        for key in ["W.Median", "Range_lower", "Range_upper"]:
-            local_val = extract_scalar(local_json.get(key))
-            biovar_val = extract_scalar(biovar_json.get(key))
-            if local_val is None or biovar_val is None:
-                assert local_val == biovar_val, f"{key}: {local_val} != {biovar_val} (n={n})"
-            else:
->               assert math.isclose(local_val, biovar_val, rel_tol=1e-2, abs_tol=0.02), f"{key}: {local_val} != {biovar_val} (n={n})"
-E               AssertionError: Range_lower: 13.986812972111018 != 13.8171 (n=12)
-E               assert False
-E                +  where False = <built-in function isclose>(13.986812972111018, 13.8171, rel_tol=0.01, abs_tol=0.02)
-E                +    where <built-in function isclose> = math.isclose
+            for key in ["W.Median", "Range_lower", "Range_upper"]:
+                local_val = extract_scalar(local_json.get(key))
+                biovar_val = extract_scalar(biovar_json.get(key))
+                if local_val is None or biovar_val is None:
+                    if local_val != biovar_val:
+                        failures.append(f"#{i} {key}: {local_val} != {biovar_val} (n={n})")
+                else:
+                    if not math.isclose(local_val, biovar_val, rel_tol=1e-2, abs_tol=0.02):
+                        failures.append(f"#{i} {key}: {local_val} != {biovar_val} (n={n})")
+    
+            local_n = extract_scalar(local_json.get("N"))
+            biovar_n = extract_scalar(biovar_json.get("N"))
+            if local_n != biovar_n:
+                failures.append(f"#{i} N: {local_n} != {biovar_n} (n={n})")
+    
+        print(f"\nRandomized test summary: {total - len(failures)} passed, {len(failures)} failed.")
+        if failures:
+            print("Failures:")
+            for fail in failures:
+                print(fail)
+>       assert not failures, f"{len(failures)} failures out of {total} tests."
+E       AssertionError: 3 failures out of 20 tests.
+E       assert not ['#6 Range_lower: 17.00043848807498 != 17.2825 (n=11)', '#12 Range_lower: 14.68105149722933 != 14.4128 (n=14)', '#13 Range_upper: 21.8841339178937 != 22.13 (n=18)']
 
-tests/test_biological_variation.py:42: AssertionError
+tests/test_biological_variation.py:60: AssertionError
 ------------------------------ Captured log call -------------------------------
 INFO     httpx:_client.py:1740 HTTP Request: POST http://localhost:8081/metacalculation "HTTP/1.1 200 OK"
 INFO     httpx:_client.py:1740 HTTP Request: POST https://r.biologicalvariation.eu/metacalculation "HTTP/1.1 200 OK"
-________________ test_compare_all_with_biologicalvariation[13] _________________
-
-n = 13
-
-    @pytest.mark.asyncio
-    @pytest.mark.parametrize("n", range(1, 31))  # Test from 1 to 30 records
-    async def test_compare_all_with_biologicalvariation(n):
-        CSV_DATA = make_csv(n)
-        headers = {"Content-Type": "text/plain"}
-        async with httpx.AsyncClient() as client:
-            local_resp = await client.post(LOCAL_API_URL, content=CSV_DATA, headers=headers)
-            assert local_resp.status_code == 200
-            local_json = local_resp.json()
-    
-            biovar_resp = await client.post(BIOVAR_API_URL, content=CSV_DATA, headers=headers)
-            assert biovar_resp.status_code == 200
-            biovar_json = biovar_resp.json()
-    
-        for key in ["W.Median", "Range_lower", "Range_upper"]:
-            local_val = extract_scalar(local_json.get(key))
-            biovar_val = extract_scalar(biovar_json.get(key))
-            if local_val is None or biovar_val is None:
-                assert local_val == biovar_val, f"{key}: {local_val} != {biovar_val} (n={n})"
-            else:
->               assert math.isclose(local_val, biovar_val, rel_tol=1e-2, abs_tol=0.02), f"{key}: {local_val} != {biovar_val} (n={n})"
-E               AssertionError: Range_lower: 13.847015880637702 != 13.5269 (n=13)
-E               assert False
-E                +  where False = <built-in function isclose>(13.847015880637702, 13.5269, rel_tol=0.01, abs_tol=0.02)
-E                +    where <built-in function isclose> = math.isclose
-
-tests/test_biological_variation.py:42: AssertionError
------------------------------- Captured log call -------------------------------
 INFO     httpx:_client.py:1740 HTTP Request: POST http://localhost:8081/metacalculation "HTTP/1.1 200 OK"
 INFO     httpx:_client.py:1740 HTTP Request: POST https://r.biologicalvariation.eu/metacalculation "HTTP/1.1 200 OK"
-________________ test_compare_all_with_biologicalvariation[15] _________________
-
-n = 15
-
-    @pytest.mark.asyncio
-    @pytest.mark.parametrize("n", range(1, 31))  # Test from 1 to 30 records
-    async def test_compare_all_with_biologicalvariation(n):
-        CSV_DATA = make_csv(n)
-        headers = {"Content-Type": "text/plain"}
-        async with httpx.AsyncClient() as client:
-            local_resp = await client.post(LOCAL_API_URL, content=CSV_DATA, headers=headers)
-            assert local_resp.status_code == 200
-            local_json = local_resp.json()
-    
-            biovar_resp = await client.post(BIOVAR_API_URL, content=CSV_DATA, headers=headers)
-            assert biovar_resp.status_code == 200
-            biovar_json = biovar_resp.json()
-    
-        for key in ["W.Median", "Range_lower", "Range_upper"]:
-            local_val = extract_scalar(local_json.get(key))
-            biovar_val = extract_scalar(biovar_json.get(key))
-            if local_val is None or biovar_val is None:
-                assert local_val == biovar_val, f"{key}: {local_val} != {biovar_val} (n={n})"
-            else:
->               assert math.isclose(local_val, biovar_val, rel_tol=1e-2, abs_tol=0.02), f"{key}: {local_val} != {biovar_val} (n={n})"
-E               AssertionError: Range_upper: 21.84991569622719 != 21.06 (n=15)
-E               assert False
-E                +  where False = <built-in function isclose>(21.84991569622719, 21.06, rel_tol=0.01, abs_tol=0.02)
-E                +    where <built-in function isclose> = math.isclose
-
-tests/test_biological_variation.py:42: AssertionError
------------------------------- Captured log call -------------------------------
 INFO     httpx:_client.py:1740 HTTP Request: POST http://localhost:8081/metacalculation "HTTP/1.1 200 OK"
 INFO     httpx:_client.py:1740 HTTP Request: POST https://r.biologicalvariation.eu/metacalculation "HTTP/1.1 200 OK"
-________________ test_compare_all_with_biologicalvariation[20] _________________
-
-n = 20
-
-    @pytest.mark.asyncio
-    @pytest.mark.parametrize("n", range(1, 31))  # Test from 1 to 30 records
-    async def test_compare_all_with_biologicalvariation(n):
-        CSV_DATA = make_csv(n)
-        headers = {"Content-Type": "text/plain"}
-        async with httpx.AsyncClient() as client:
-            local_resp = await client.post(LOCAL_API_URL, content=CSV_DATA, headers=headers)
-            assert local_resp.status_code == 200
-            local_json = local_resp.json()
-    
-            biovar_resp = await client.post(BIOVAR_API_URL, content=CSV_DATA, headers=headers)
-            assert biovar_resp.status_code == 200
-            biovar_json = biovar_resp.json()
-    
-        for key in ["W.Median", "Range_lower", "Range_upper"]:
-            local_val = extract_scalar(local_json.get(key))
-            biovar_val = extract_scalar(biovar_json.get(key))
-            if local_val is None or biovar_val is None:
-                assert local_val == biovar_val, f"{key}: {local_val} != {biovar_val} (n={n})"
-            else:
->               assert math.isclose(local_val, biovar_val, rel_tol=1e-2, abs_tol=0.02), f"{key}: {local_val} != {biovar_val} (n={n})"
-E               AssertionError: Range_lower: 20.297145244891624 != 19.704 (n=20)
-E               assert False
-E                +  where False = <built-in function isclose>(20.297145244891624, 19.704, rel_tol=0.01, abs_tol=0.02)
-E                +    where <built-in function isclose> = math.isclose
-
-tests/test_biological_variation.py:42: AssertionError
------------------------------- Captured log call -------------------------------
 INFO     httpx:_client.py:1740 HTTP Request: POST http://localhost:8081/metacalculation "HTTP/1.1 200 OK"
 INFO     httpx:_client.py:1740 HTTP Request: POST https://r.biologicalvariation.eu/metacalculation "HTTP/1.1 200 OK"
-________________ test_compare_all_with_biologicalvariation[22] _________________
-
-n = 22
-
-    @pytest.mark.asyncio
-    @pytest.mark.parametrize("n", range(1, 31))  # Test from 1 to 30 records
-    async def test_compare_all_with_biologicalvariation(n):
-        CSV_DATA = make_csv(n)
-        headers = {"Content-Type": "text/plain"}
-        async with httpx.AsyncClient() as client:
-            local_resp = await client.post(LOCAL_API_URL, content=CSV_DATA, headers=headers)
-            assert local_resp.status_code == 200
-            local_json = local_resp.json()
-    
-            biovar_resp = await client.post(BIOVAR_API_URL, content=CSV_DATA, headers=headers)
-            assert biovar_resp.status_code == 200
-            biovar_json = biovar_resp.json()
-    
-        for key in ["W.Median", "Range_lower", "Range_upper"]:
-            local_val = extract_scalar(local_json.get(key))
-            biovar_val = extract_scalar(biovar_json.get(key))
-            if local_val is None or biovar_val is None:
-                assert local_val == biovar_val, f"{key}: {local_val} != {biovar_val} (n={n})"
-            else:
->               assert math.isclose(local_val, biovar_val, rel_tol=1e-2, abs_tol=0.02), f"{key}: {local_val} != {biovar_val} (n={n})"
-E               AssertionError: Range_upper: 21.337177771529795 != 22.07 (n=22)
-E               assert False
-E                +  where False = <built-in function isclose>(21.337177771529795, 22.07, rel_tol=0.01, abs_tol=0.02)
-E                +    where <built-in function isclose> = math.isclose
-
-tests/test_biological_variation.py:42: AssertionError
------------------------------- Captured log call -------------------------------
 INFO     httpx:_client.py:1740 HTTP Request: POST http://localhost:8081/metacalculation "HTTP/1.1 200 OK"
 INFO     httpx:_client.py:1740 HTTP Request: POST https://r.biologicalvariation.eu/metacalculation "HTTP/1.1 200 OK"
-________________ test_compare_all_with_biologicalvariation[23] _________________
-
-n = 23
-
-    @pytest.mark.asyncio
-    @pytest.mark.parametrize("n", range(1, 31))  # Test from 1 to 30 records
-    async def test_compare_all_with_biologicalvariation(n):
-        CSV_DATA = make_csv(n)
-        headers = {"Content-Type": "text/plain"}
-        async with httpx.AsyncClient() as client:
-            local_resp = await client.post(LOCAL_API_URL, content=CSV_DATA, headers=headers)
-            assert local_resp.status_code == 200
-            local_json = local_resp.json()
-    
-            biovar_resp = await client.post(BIOVAR_API_URL, content=CSV_DATA, headers=headers)
-            assert biovar_resp.status_code == 200
-            biovar_json = biovar_resp.json()
-    
-        for key in ["W.Median", "Range_lower", "Range_upper"]:
-            local_val = extract_scalar(local_json.get(key))
-            biovar_val = extract_scalar(biovar_json.get(key))
-            if local_val is None or biovar_val is None:
-                assert local_val == biovar_val, f"{key}: {local_val} != {biovar_val} (n={n})"
-            else:
->               assert math.isclose(local_val, biovar_val, rel_tol=1e-2, abs_tol=0.02), f"{key}: {local_val} != {biovar_val} (n={n})"
-E               AssertionError: Range_upper: 25.56 != 25.8907 (n=23)
-E               assert False
-E                +  where False = <built-in function isclose>(25.56, 25.8907, rel_tol=0.01, abs_tol=0.02)
-E                +    where <built-in function isclose> = math.isclose
-
-tests/test_biological_variation.py:42: AssertionError
------------------------------- Captured log call -------------------------------
 INFO     httpx:_client.py:1740 HTTP Request: POST http://localhost:8081/metacalculation "HTTP/1.1 200 OK"
 INFO     httpx:_client.py:1740 HTTP Request: POST https://r.biologicalvariation.eu/metacalculation "HTTP/1.1 200 OK"
-________________ test_compare_all_with_biologicalvariation[29] _________________
-
-n = 29
-
-    @pytest.mark.asyncio
-    @pytest.mark.parametrize("n", range(1, 31))  # Test from 1 to 30 records
-    async def test_compare_all_with_biologicalvariation(n):
-        CSV_DATA = make_csv(n)
-        headers = {"Content-Type": "text/plain"}
-        async with httpx.AsyncClient() as client:
-            local_resp = await client.post(LOCAL_API_URL, content=CSV_DATA, headers=headers)
-            assert local_resp.status_code == 200
-            local_json = local_resp.json()
-    
-            biovar_resp = await client.post(BIOVAR_API_URL, content=CSV_DATA, headers=headers)
-            assert biovar_resp.status_code == 200
-            biovar_json = biovar_resp.json()
-    
-        for key in ["W.Median", "Range_lower", "Range_upper"]:
-            local_val = extract_scalar(local_json.get(key))
-            biovar_val = extract_scalar(biovar_json.get(key))
-            if local_val is None or biovar_val is None:
-                assert local_val == biovar_val, f"{key}: {local_val} != {biovar_val} (n={n})"
-            else:
->               assert math.isclose(local_val, biovar_val, rel_tol=1e-2, abs_tol=0.02), f"{key}: {local_val} != {biovar_val} (n={n})"
-E               AssertionError: Range_upper: 22.569471136811526 != 22.3348 (n=29)
-E               assert False
-E                +  where False = <built-in function isclose>(22.569471136811526, 22.3348, rel_tol=0.01, abs_tol=0.02)
-E                +    where <built-in function isclose> = math.isclose
-
-tests/test_biological_variation.py:42: AssertionError
------------------------------- Captured log call -------------------------------
 INFO     httpx:_client.py:1740 HTTP Request: POST http://localhost:8081/metacalculation "HTTP/1.1 200 OK"
 INFO     httpx:_client.py:1740 HTTP Request: POST https://r.biologicalvariation.eu/metacalculation "HTTP/1.1 200 OK"
-________________ test_compare_all_with_biologicalvariation[30] _________________
-
-n = 30
-
-    @pytest.mark.asyncio
-    @pytest.mark.parametrize("n", range(1, 31))  # Test from 1 to 30 records
-    async def test_compare_all_with_biologicalvariation(n):
-        CSV_DATA = make_csv(n)
-        headers = {"Content-Type": "text/plain"}
-        async with httpx.AsyncClient() as client:
-            local_resp = await client.post(LOCAL_API_URL, content=CSV_DATA, headers=headers)
-            assert local_resp.status_code == 200
-            local_json = local_resp.json()
-    
-            biovar_resp = await client.post(BIOVAR_API_URL, content=CSV_DATA, headers=headers)
-            assert biovar_resp.status_code == 200
-            biovar_json = biovar_resp.json()
-    
-        for key in ["W.Median", "Range_lower", "Range_upper"]:
-            local_val = extract_scalar(local_json.get(key))
-            biovar_val = extract_scalar(biovar_json.get(key))
-            if local_val is None or biovar_val is None:
-                assert local_val == biovar_val, f"{key}: {local_val} != {biovar_val} (n={n})"
-            else:
->               assert math.isclose(local_val, biovar_val, rel_tol=1e-2, abs_tol=0.02), f"{key}: {local_val} != {biovar_val} (n={n})"
-E               AssertionError: Range_upper: 21.034013712350568 != 21.7755 (n=30)
-E               assert False
-E                +  where False = <built-in function isclose>(21.034013712350568, 21.7755, rel_tol=0.01, abs_tol=0.02)
-E                +    where <built-in function isclose> = math.isclose
-
-tests/test_biological_variation.py:42: AssertionError
------------------------------- Captured log call -------------------------------
 INFO     httpx:_client.py:1740 HTTP Request: POST http://localhost:8081/metacalculation "HTTP/1.1 200 OK"
 INFO     httpx:_client.py:1740 HTTP Request: POST https://r.biologicalvariation.eu/metacalculation "HTTP/1.1 200 OK"
+INFO     httpx:_client.py:1740 HTTP Request: POST http://localhost:8081/metacalculation "HTTP/1.1 200 OK"
+INFO     httpx:_client.py:1740 HTTP Request: POST https://r.biologicalvariation.eu/metacalculation "HTTP/1.1 200 OK"
+INFO     httpx:_client.py:1740 HTTP Request: POST http://localhost:8081/metacalculation "HTTP/1.1 200 OK"
+INFO     httpx:_client.py:1740 HTTP Request: POST https://r.biologicalvariation.eu/metacalculation "HTTP/1.1 200 OK"
+INFO     httpx:_client.py:1740 HTTP Request: POST http://localhost:8081/metacalculation "HTTP/1.1 200 OK"
+INFO     httpx:_client.py:1740 HTTP Request: POST https://r.biologicalvariation.eu/metacalculation "HTTP/1.1 200 OK"
+INFO     httpx:_client.py:1740 HTTP Request: POST http://localhost:8081/metacalculation "HTTP/1.1 200 OK"
+INFO     httpx:_client.py:1740 HTTP Request: POST https://r.biologicalvariation.eu/metacalculation "HTTP/1.1 200 OK"
+INFO     httpx:_client.py:1740 HTTP Request: POST http://localhost:8081/metacalculation "HTTP/1.1 200 OK"
+INFO     httpx:_client.py:1740 HTTP Request: POST https://r.biologicalvariation.eu/metacalculation "HTTP/1.1 200 OK"
+INFO     httpx:_client.py:1740 HTTP Request: POST http://localhost:8081/metacalculation "HTTP/1.1 200 OK"
+INFO     httpx:_client.py:1740 HTTP Request: POST https://r.biologicalvariation.eu/metacalculation "HTTP/1.1 200 OK"
+INFO     httpx:_client.py:1740 HTTP Request: POST http://localhost:8081/metacalculation "HTTP/1.1 200 OK"
+INFO     httpx:_client.py:1740 HTTP Request: POST https://r.biologicalvariation.eu/metacalculation "HTTP/1.1 200 OK"
+INFO     httpx:_client.py:1740 HTTP Request: POST http://localhost:8081/metacalculation "HTTP/1.1 200 OK"
+INFO     httpx:_client.py:1740 HTTP Request: POST https://r.biologicalvariation.eu/metacalculation "HTTP/1.1 200 OK"
+INFO     httpx:_client.py:1740 HTTP Request: POST http://localhost:8081/metacalculation "HTTP/1.1 200 OK"
+INFO     httpx:_client.py:1740 HTTP Request: POST https://r.biologicalvariation.eu/metacalculation "HTTP/1.1 200 OK"
+INFO     httpx:_client.py:1740 HTTP Request: POST http://localhost:8081/metacalculation "HTTP/1.1 200 OK"
+INFO     httpx:_client.py:1740 HTTP Request: POST https://r.biologicalvariation.eu/metacalculation "HTTP/1.1 200 OK"
+INFO     httpx:_client.py:1740 HTTP Request: POST http://localhost:8081/metacalculation "HTTP/1.1 200 OK"
+INFO     httpx:_client.py:1740 HTTP Request: POST https://r.biologicalvariation.eu/metacalculation "HTTP/1.1 200 OK"
+INFO     httpx:_client.py:1740 HTTP Request: POST http://localhost:8081/metacalculation "HTTP/1.1 200 OK"
+INFO     httpx:_client.py:1740 HTTP Request: POST https://r.biologicalvariation.eu/metacalculation "HTTP/1.1 200 OK"
+=============================== warnings summary ===============================
+tests/test_metacalculation_valid_csv.py::test_metacalculation_valid_csv
+  /Users/craigwebster/metacalculation-service/app/core.py:91: FutureWarning: DataFrameGroupBy.apply operated on the grouping columns. This behavior is deprecated, and in a future version of pandas the grouping columns will be excluded from the operation. Either pass `include_groups=False` to exclude the groupings or explicitly select the grouping columns after groupby to silence this warning.
+    trunc = grouped.apply(agg_fn).reset_index()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
 =========================== short test summary info ============================
-FAILED tests/test_biological_variation.py::test_compare_all_with_biologicalvariation[12]
-FAILED tests/test_biological_variation.py::test_compare_all_with_biologicalvariation[13]
-FAILED tests/test_biological_variation.py::test_compare_all_with_biologicalvariation[15]
-FAILED tests/test_biological_variation.py::test_compare_all_with_biologicalvariation[20]
-FAILED tests/test_biological_variation.py::test_compare_all_with_biologicalvariation[22]
-FAILED tests/test_biological_variation.py::test_compare_all_with_biologicalvariation[23]
-FAILED tests/test_biological_variation.py::test_compare_all_with_biologicalvariation[29]
-FAILED tests/test_biological_variation.py::test_compare_all_with_biologicalvariation[30]
-======================== 8 failed, 23 passed in 13.67s =========================
+FAILED tests/test_biological_variation.py::test_compare_many_random_datasets_with_summary - AssertionError: 3 failures out of 20 tests.
+assert not ['#6 Range_lower: 17.00043848807498 != 17.2825 (n=11)', '#12 Range_lower: 14.68105149722933 != 14.4128 (n=14)', '#13 Range_upper: 21.8841339178937 != 22.13 (n=18)']
+==================== 1 failed, 3 passed, 1 warning in 8.46s ====================
